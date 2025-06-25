@@ -8,18 +8,16 @@ name: Generate & Publish Changelog
 on:
   push:
     branches: main
-
   workflow_dispatch:
-
   release:
     type: created
+
+permissions:
+  content: write
 
   jobs:
     build-changelog:
       run-on: ubuntu-latest
-
-      permissions:
-        content: write
 
       steps:
       - uses: actions/checkout@v4
