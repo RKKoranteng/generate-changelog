@@ -7,10 +7,10 @@ name: Generate and Publish Changelog
 
 on:
   push:
-    branches: main
+    branches: [main]
   workflow_dispatch:
   release:
-    type: created
+    type: [created]
 
 permissions:
   content: write
