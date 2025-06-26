@@ -4,13 +4,12 @@
 # @changes: refer to CHANGELOG.md
 
 name: Generate-Changelog
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-  release:
-    type: [created]
+on: [push]
+#  push:
+#    branches: [main]
+#  workflow_dispatch:
+#  release:
+#    type: [created]
 
 permissions:
   content: write
