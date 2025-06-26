@@ -56,8 +56,3 @@ jobs:
         else
           echo "No changelog update needed"
         fi
-    - name: Populate Release Notes from CHANGELOG
-      uses: softprops/action-gh-release@v2
-      if: github.event_name == 'release'
-      with:
-        body_path: CHANGELOG.md
