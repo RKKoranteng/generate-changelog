@@ -33,7 +33,7 @@ jobs:
           commits=$(git log $range --pretty=format:"%h|%s|%an" | grep "|$prefix" || true)
           [ -z "$commits" ] &&continue
           echo "### $title" >> CHANGELOG.md
-          echo $commits
+          echo "Commit message : $commits"
           
           while IFS='|' read -r hash msg author
           do
