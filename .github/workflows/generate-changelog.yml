@@ -40,7 +40,7 @@ jobs:
             clean_msg=${msg#"$prefix "}
             echo "- ${clean_msg} (${author})" >> CHANGELOG.md
           done << $commits
-          echo >> CHANGELOG.md
+          # echo >> CHANGELOG.md
         done
     - name: Commit & push
       run: |
