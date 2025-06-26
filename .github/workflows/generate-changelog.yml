@@ -3,7 +3,7 @@
 # @author: Richard Koranteng (https://rkkoranteng.com)
 # @changes: refer to CHANGELOG.md
 
-name: Generate and Publish Changelog
+name: Generate-Changelog
 
 on:
   push:
