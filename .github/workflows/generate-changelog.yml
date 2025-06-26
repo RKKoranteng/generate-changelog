@@ -5,14 +5,12 @@
 
 name: Generate and Publish Changelog
 
-on:
-  workflow_dispatch:
-  push:
+on: push
 #  push:
 #    branches: [main]
 #  workflow_dispatch:
-  release:
-    type: [created]
+#  release:
+#    type: [created]
 
 permissions:
   content: write
