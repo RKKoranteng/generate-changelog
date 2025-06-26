@@ -1,8 +1,3 @@
-# @name: generate-changelog.yml
-# @description: GitHub Action that automatically generates and publishes changelog based on git commits
-# @author: Richard Koranteng (https://rkkoranteng.com)
-# @changes: refer to CHANGELOG.md
-
 name: Generate and Publish Changelog
 
 on:
