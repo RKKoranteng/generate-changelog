@@ -25,9 +25,10 @@ jobs:
         last_tag=$(git describe --tags --abbrev=0 --match "v[0-9]*" 2>/dev/null || echo "")
         range="${last_tag:+$last_tag..}HEAD"
 
-        echo "## [UNRELEASED] - $(date +%Y-%m-%d)" > CHANGELOG.md
+        echo "# Changelog" > CHANGELOG.md
+        echo "All notable changes to this project will be documented in this file."
         echo >> CHANGELOG.md
-        for section in "Added|feat:" "Changed|refactor:" "Fixed|fix" "Removed|remove"
+        for section in "Added|add:" "Changed|change:" "Fixed|fix" "Removed|remove"
         do 
           IFS="|" read -r title prefix <<< "$section"
           commits=$(git log $range --pretty=format:"%h|%s|%an" | grep "|$prefix" || true)
@@ -38,7 +39,7 @@ jobs:
           while IFS='|' read -r hash msg author
           do
             clean_msg=${msg#"$prefix "}
-            echo "- ${clean_msg} (${author})" >> CHANGELOG.md
+            echo "- $(date +%Y-%m-%d) : ${clean_msg} (${author})" >> CHANGELOG.md
           done <<< $commits
           
           echo >> CHANGELOG.md
