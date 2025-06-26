@@ -3,13 +3,16 @@
 # @author: Richard Koranteng (https://rkkoranteng.com)
 # @changes: refer to CHANGELOG.md
 
-name: Generate-Changelog
-on: [push]
+name: Generate and Publish Changelog
+
+on:
+  workflow_dispatch:
+  push:
 #  push:
 #    branches: [main]
 #  workflow_dispatch:
-#  release:
-#    type: [created]
+  release:
+    type: [created]
 
 permissions:
   content: write
