@@ -29,7 +29,7 @@ jobs:
         echo >> CHANGELOG.md
         for section in "Added|feat:" "Changed|refactor:" "Fixed|fix" "Removed|perf"
         do 
-          IFS="|" read -r TITLE PREFIX << "$section"
+          IFS="|" read -r title prefix <<< "$section"
           commits=$(git log $range --pretty=format:"%h|%s|%an" | grep "|$prefix" || true)
           [ -z "$commits" ] &&continue
           echo "### $title" >> CHANGELOG.md
@@ -39,9 +39,11 @@ jobs:
           do
             clean_msg=${msg#"$prefix "}
             echo "- ${clean_msg} (${author})" >> CHANGELOG.md
-          done << $commits
-          # echo >> CHANGELOG.md
+          done <<< $commits
+          
+          echo >> CHANGELOG.md
         done
+        
     - name: Commit & push
       run: |
         if [[ -n "$(git status --porcelain CHANGELOG.md)" ]]
