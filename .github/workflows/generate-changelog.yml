@@ -27,7 +27,7 @@ jobs:
 
         echo "## [UNRELEASED] - $(date +%Y-%m-%d)" > CHANGELOG.md
         echo >> CHANGELOG.md
-        for section in "Added|feat:" "Changed|refactor:" "Fixed|fix" "Removed|perf"
+        for section in "Added|feat:" "Changed|refactor:" "Fixed|fix" "Removed|remove"
         do 
           IFS="|" read -r title prefix <<< "$section"
           commits=$(git log $range --pretty=format:"%h|%s|%an" | grep "|$prefix" || true)
