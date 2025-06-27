@@ -28,6 +28,8 @@ jobs:
         echo "# Changelog" > CHANGELOG.md
         echo "All notable changes to this project will be documented in this file."
         echo >> CHANGELOG.md
+
+        echo "## [last_tag] - $(date +%Y-%m-%d)"
         for section in "Added|add:" "Changed|change:" "Fixed|fix" "Removed|remove"
         do 
           IFS="|" read -r title prefix <<< "$section"
@@ -39,7 +41,7 @@ jobs:
           while IFS='|' read -r hash msg author
           do
             clean_msg=${msg#"$prefix "}
-            echo "- $(date +%Y-%m-%d) : ${clean_msg} (${author})" >> CHANGELOG.md
+            echo "- ${clean_msg} (${author})" >> CHANGELOG.md
           done <<< $commits
           
           echo >> CHANGELOG.md
