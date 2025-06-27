@@ -29,7 +29,7 @@ jobs:
         echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
         echo >> CHANGELOG.md
 
-        echo "## [last_tag] - $(date +%Y-%m-%d)" >> CHANGELOG.md
+        echo "## [${last_tag}] - $(date +%Y-%m-%d)" >> CHANGELOG.md
         for section in "Added|add:" "Changed|change:" "Fixed|fix:" "Removed|remove:"
         do 
           IFS="|" read -r title prefix <<< "$section"
