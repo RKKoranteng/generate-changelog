@@ -30,7 +30,7 @@ jobs:
         echo >> CHANGELOG.md
 
         echo "## [last_tag] - $(date +%Y-%m-%d)"
-        for section in "Added|add:" "Changed|change:" "Fixed|fix" "Removed|remove"
+        for section in "Added|add:" "Changed|change:" "Fixed|fix:" "Removed|remove:"
         do 
           IFS="|" read -r title prefix <<< "$section"
           commits=$(git log $range --pretty=format:"%h|%s|%an" | grep "|$prefix" || true)
