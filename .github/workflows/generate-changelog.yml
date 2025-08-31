@@ -27,6 +27,7 @@ jobs:
 
         echo "# Changelog" > CHANGELOG.md
         echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
+        echo >> CHANGELOG.md
         echo "The project is created and maintained by [Richard Koranteng](https://rkkoranteng.com), and adheres to [Calendar Versioning](https://calver.org/)." >> CHANGELOG.md
         echo >> CHANGELOG.md
 
