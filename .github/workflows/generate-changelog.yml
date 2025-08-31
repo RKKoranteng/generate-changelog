@@ -39,7 +39,7 @@ jobs:
           [ -z "$commits" ] &&continue
           #echo "### $title" >> CHANGELOG.md
           #echo "Commit message : $commits"
-          echo "$(date +%Y-%m-%d) : $title - $commits"
+          echo "$(date +%Y-%m-%d) : $title - $commits" >> CHANGELOG.md
           
           while IFS='|' read -r hash msg author
           do
