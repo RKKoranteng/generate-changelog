@@ -30,21 +30,19 @@ jobs:
         echo "The project is created and maintained by [Richard Koranteng](https://rkkoranteng.com), and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)." >> CHANGELOG.md
         echo >> CHANGELOG.md
 
-        #echo "## ${last_tag} - $(date +%Y-%m-%d)" >> CHANGELOG.md
-        echo "## ${last_tag}" >> CHANGELOG.md
-        for section in "ADD|add:" "REFACTOR|chg:" "FIX|fix:" "DELETE|del:"
+        echo "## ${last_tag} - $(date +%Y-%m-%d)" >> CHANGELOG.md
+        for section in "add|add:" "refactor|ref:" "fix|fix:" "delete|del:"
         do 
           IFS="|" read -r title prefix <<< "$section"
           commits=$(git log $range --pretty=format:"%h|%s|%an" | grep "|$prefix" || true)
           [ -z "$commits" ] &&continue
           #echo "### $title" >> CHANGELOG.md
           #echo "Commit message : $commits"
-          echo "$(date +%Y-%m-%d) : $title - $commits" >> CHANGELOG.md
-          
+                    
           while IFS='|' read -r hash msg author
           do
             clean_msg=${msg#"$prefix "}
-            echo "- ${clean_msg} (${author})" >> CHANGELOG.md
+            echo "- $(date +%Y-%m-%d): $title - ${clean_msg} (${author})" >> CHANGELOG.md
           done <<< $commits
           
           echo >> CHANGELOG.md
