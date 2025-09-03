@@ -2,10 +2,10 @@ name: Generate and Publish Changelog
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   workflow_dispatch:
   release:
-    types: [created]
+    type: [created]
 
 permissions:
   contents: write
@@ -14,73 +14,51 @@ jobs:
   build-changelog:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # need full history & tags
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Generate Changelog
+      id: changelog
+      shell: bash 
+      run: |
+        # detect the most recent version tag (tags must look like v1.2.3)
+        last_tag=$(git describe --tags --abbrev=0 --match "v[0-9]*" 2>/dev/null || echo "")
+        range="${last_tag:+$last_tag..}HEAD"
 
-      - name: Generate CHANGELOG.md (newest tags first)
-        shell: bash
-        run: |
-          set -euo pipefail
+        echo "# Changelog" > CHANGELOG.md
+        echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
+        echo >> CHANGELOG.md
+        echo "The project is created and maintained by [Richard Koranteng](https://rkkoranteng.com), and adheres to [Calendar Versioning](https://calver.org/)." >> CHANGELOG.md
+        echo >> CHANGELOG.md
 
-          # Collect tags newest → oldest (falls back gracefully if only lightweight tags exist)
-          mapfile -t TAGS < <(git tag --sort=-creatordate)
-          if [[ ${#TAGS[@]} -eq 0 ]]; then
-            echo "No tags found; nothing to write."
-            exit 0
-          fi
-
-          # Find first/root commit to bound the oldest tag's range
-          ROOT_COMMIT=$(git rev-list --max-parents=0 HEAD | head -n1)
-
-          TMP_FILE="$(mktemp)"
-          {
-            # ---- Fixed header (once) ----
-            echo "# Changelog"
-            echo "All notable changes to this project will be documented in this file."
-            echo
-            echo "The project is created and maintained by [Richard Koranteng](https://rkkoranteng.com), and adheres to [Calendar Versioning](https://calver.org/)."
-            echo
-
-            # ---- For each tag: list commits between it and the next older tag ----
-            for (( i=0; i<${#TAGS[@]}; i++ )); do
-              CUR="${TAGS[$i]}"
-              NEXT_OLD="${TAGS[$((i+1))]:-}"
-
-              if [[ -n "$NEXT_OLD" ]]; then
-                RANGE="${NEXT_OLD}..${CUR}"
-              else
-                # Oldest tag: include everything from the first commit up to this tag
-                RANGE="${ROOT_COMMIT}..${CUR}"
-              fi
-
-              # Get commit subjects (no merges) newest → oldest within the range
-              COMMITS=$(git log --no-merges --pretty=format:"- %s" "$RANGE" || true)
-
-              # If there are no commits in this range (unusual but possible), skip the section
-              [[ -z "$COMMITS" ]] && continue
-
-              echo "## ${CUR}"
-              echo "${COMMITS}"
-              echo
-            done
-          } > "$TMP_FILE"
-
-          # Only update the file if content changed to avoid empty commits
-          if [[ ! -f CHANGELOG.md ]] || ! diff -q "$TMP_FILE" CHANGELOG.md >/dev/null 2>&1; then
-            mv "$TMP_FILE" CHANGELOG.md
-          else
-            echo "CHANGELOG.md is already up to date."
-          fi
-
-      - name: Commit & push (if changed)
-        run: |
-          if [[ -n "$(git status --porcelain CHANGELOG.md)" ]]; then
-            git config user.name  "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add CHANGELOG.md
-            git commit -m "docs: regenerate CHANGELOG [skip ci]"
-            git push
-          else
-            echo "No changelog update needed."
-          fi
+        echo "## ${last_tag}" >> CHANGELOG.md
+        for section in "add|add:" "refactor|ref:" "fix|fix:" "delete|del:"
+        do 
+          IFS="|" read -r title prefix <<< "$section"
+          commits=$(git log $range --pretty=format:"%h|%s|%an" | grep "|$prefix" || true)
+          [ -z "$commits" ] &&continue
+          #echo "### $title" >> CHANGELOG.md
+          #echo "Commit message : $commits"
+                    
+          while IFS='|' read -r hash msg author
+          do
+            clean_msg=${msg#"$prefix "}
+            echo "- $(date +%Y-%m-%d): $title - ${clean_msg} (${author})" >> CHANGELOG.md
+          done <<< $commits
+          
+          echo >> CHANGELOG.md
+        done
+        
+    - name: Commit & push
+      run: |
+        if [[ -n "$(git status --porcelain CHANGELOG.md)" ]]
+        then
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@user.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG [skip ci]"
+          git push
+        else
+          echo "No changelog update needed"
+        fi
