@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
   release:
-    types: [created]
+    type: [created]
 
 permissions:
   contents: write
@@ -17,86 +17,47 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-
-    - name: Generate Changelog (prepend latest release section)
+        
+    - name: Generate Changelog
       id: changelog
-      shell: bash
+      shell: bash 
       run: |
-        set -euo pipefail
+        # detect the most recent version tag (tags must look like v1.2.3)
+        last_tag=$(git describe --tags --abbrev=0 --match "v[0-9]*" 2>/dev/null || echo "")
+        range="${last_tag:+$last_tag..}HEAD"
 
-        # --- Find latest and previous tags (expect tags like v1.2.3 or calver like 2025.09.03) ---
-        latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-        if [[ -z "$latest_tag" ]]; then
-          echo "No tags found; skipping changelog update."
-          exit 0
-        fi
-        prev_tag=$(git tag --sort=-creatordate | sed -n '2p' || true)
-        range="${prev_tag:+$prev_tag..}$latest_tag"
+        echo "# Changelog" > CHANGELOG.md
+        echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
+        echo >> CHANGELOG.md
+        echo "The project is created and maintained by [Richard Koranteng](https://rkkoranteng.com), and adheres to [Calendar Versioning](https://calver.org/)." >> CHANGELOG.md
+        echo >> CHANGELOG.md
 
-        # Date for the section (use tag's commit date)
-        tag_date=$(git log -1 --format=%ad --date=short "$latest_tag")
-
-        # --- Build a new section for the latest tag only ---
-        tmp_new=$(mktemp)
-        {
-          echo "## ${latest_tag}"
-
-          # Map sections -> prefixes found in commit summaries
-          for section in "add|add:" "refactor|ref:" "fix|fix:" "delete|del:"; do
-            IFS="|" read -r title prefix <<< "$section"
-            commits=$(git log $range --pretty=format:"%h|%s|%an" | grep -iE "\|${prefix}" || true)
-            [[ -z "$commits" ]] && continue
-
-            echo "### ${title^}"   # capitalize first letter
-            while IFS='|' read -r hash msg author; do
-              clean_msg=${msg#"$prefix "}
-              echo "- ${clean_msg} (${author})"
-            done <<< "$commits"
-            echo
-          done
-        } > "$tmp_new"
-
-        # If no sections produced anything, don't touch the file
-        if ! grep -qE '^### ' "$tmp_new"; then
-          echo "No categorized commits for ${latest_tag}; skipping."
-          exit 0
-        fi
-
-        # --- Ensure header exists once, then prepend the new section above old content ---
-        if [[ -f CHANGELOG.md ]]; then
-          old_content=$(cat CHANGELOG.md)
-
-          # If file starts with our header, keep it; else add it once.
-          if head -n 1 CHANGELOG.md | grep -q '^# Changelog'; then
-            printf "%s\n\n%s" "$(cat "$tmp_new")" "$old_content" > CHANGELOG.md
-          else
-            header="# Changelog
-              All notable changes to this project will be documented in this file.
-
-              The project is created and maintained by [Richard Koranteng](https://rkkoranteng.com), and adheres to [Calendar Versioning](https://calver.org/)."
-              
-            printf "%s\n\n%s\n\n%s" "$header" "$(cat "$tmp_new")" "$old_content" > CHANGELOG.md
-          fi
-        else
-          # First run: create header then add new section
-          {
-            echo "# Changelog"
-            echo "All notable changes to this project will be documented in this file."
-            echo
-            echo "The project is created and maintained by [Richard Koranteng](https://rkkoranteng.com), and adheres to [Calendar Versioning](https://calver.org/)."
-            echo
-            cat "$tmp_new"
-            echo
-          } > CHANGELOG.md
-        fi
-
+        echo "## ${last_tag}" >> CHANGELOG.md
+        for section in "add|add:" "refactor|ref:" "fix|fix:" "delete|del:"
+        do 
+          IFS="|" read -r title prefix <<< "$section"
+          commits=$(git log $range --pretty=format:"%h|%s|%an" | grep "|$prefix" || true)
+          [ -z "$commits" ] &&continue
+          #echo "### $title" >> CHANGELOG.md
+          #echo "Commit message : $commits"
+                    
+          while IFS='|' read -r hash msg author
+          do
+            clean_msg=${msg#"$prefix "}
+            echo "- $(date +%Y-%m-%d): $title - ${clean_msg} (${author})" >> CHANGELOG.md
+          done <<< $commits
+          
+          echo >> CHANGELOG.md
+        done
+        
     - name: Commit & push
       run: |
-        if [[ -n "$(git status --porcelain CHANGELOG.md)" ]]; then
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+        if [[ -n "$(git status --porcelain CHANGELOG.md)" ]]
+        then
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@user.noreply.github.com"
           git add CHANGELOG.md
-          git commit -m "docs: prepend ${latest_tag} to CHANGELOG [skip ci]" || true
+          git commit -m "docs: update CHANGELOG [skip ci]"
           git push
         else
           echo "No changelog update needed"
