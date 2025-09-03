@@ -1,0 +1,103 @@
+name: Generate and Publish Changelog
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  build-changelog:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Generate Changelog (prepend latest release section)
+      id: changelog
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # --- Find latest and previous tags (expect tags like v1.2.3 or calver like 2025.09.03) ---
+        latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        if [[ -z "$latest_tag" ]]; then
+          echo "No tags found; skipping changelog update."
+          exit 0
+        fi
+        prev_tag=$(git tag --sort=-creatordate | sed -n '2p' || true)
+        range="${prev_tag:+$prev_tag..}$latest_tag"
+
+        # Date for the section (use tag's commit date)
+        tag_date=$(git log -1 --format=%ad --date=short "$latest_tag")
+
+        # --- Build a new section for the latest tag only ---
+        tmp_new=$(mktemp)
+        {
+          echo "## ${latest_tag} - ${tag_date}"
+
+          # Map sections -> prefixes found in commit summaries
+          for section in "add|add:" "refactor|ref:" "fix|fix:" "delete|del:"; do
+            IFS="|" read -r title prefix <<< "$section"
+            commits=$(git log $range --pretty=format:"%h|%s|%an" | grep -iE "\|${prefix}" || true)
+            [[ -z "$commits" ]] && continue
+
+            echo "### ${title^}"   # capitalize first letter
+            while IFS='|' read -r hash msg author; do
+              clean_msg=${msg#"$prefix "}
+              echo "- ${clean_msg} (${author})"
+            done <<< "$commits"
+            echo
+          done
+        } > "$tmp_new"
+
+        # If no sections produced anything, don't touch the file
+        if ! grep -qE '^### ' "$tmp_new"; then
+          echo "No categorized commits for ${latest_tag}; skipping."
+          exit 0
+        fi
+
+        # --- Ensure header exists once, then prepend the new section above old content ---
+        if [[ -f CHANGELOG.md ]]; then
+          old_content=$(cat CHANGELOG.md)
+
+          # If file starts with our header, keep it; else add it once.
+          if head -n 1 CHANGELOG.md | grep -q '^# Changelog'; then
+            printf "%s\n\n%s" "$(cat "$tmp_new")" "$old_content" > CHANGELOG.md
+          else
+            header="# Changelog
+              All notable changes to this project will be documented in this file.
+
+              The project is created and maintained by [Richard Koranteng](https://rkkoranteng.com), and adheres to [Calendar Versioning](https://calver.org/)."
+              
+            printf "%s\n\n%s\n\n%s" "$header" "$(cat "$tmp_new")" "$old_content" > CHANGELOG.md
+          fi
+        else
+          # First run: create header then add new section
+          {
+            echo "# Changelog"
+            echo "All notable changes to this project will be documented in this file."
+            echo
+            echo "The project is created and maintained by [Richard Koranteng](https://rkkoranteng.com), and adheres to [Calendar Versioning](https://calver.org/)."
+            echo
+            cat "$tmp_new"
+            echo
+          } > CHANGELOG.md
+        fi
+
+    - name: Commit & push
+      run: |
+        if [[ -n "$(git status --porcelain CHANGELOG.md)" ]]; then
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: prepend ${latest_tag} to CHANGELOG [skip ci]" || true
+          git push
+        else
+          echo "No changelog update needed"
+        fi
