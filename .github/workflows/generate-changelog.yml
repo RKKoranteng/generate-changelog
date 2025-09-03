@@ -39,7 +39,7 @@ jobs:
         # --- Build a new section for the latest tag only ---
         tmp_new=$(mktemp)
         {
-          echo "## ${latest_tag} - ${tag_date}"
+          echo "## ${latest_tag}"
 
           # Map sections -> prefixes found in commit summaries
           for section in "add|add:" "refactor|ref:" "fix|fix:" "delete|del:"; do
