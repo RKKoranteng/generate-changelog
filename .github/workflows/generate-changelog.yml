@@ -40,7 +40,7 @@ jobs:
             commits=$(git log $range --no-merges --date=short --pretty=format:"%ad|%s|%an" | grep -Ei "\|$prefix" | grep -Fv 'docs: update CHANGELOG [skip ci]' || true)
             [ -z "$commits" ] && continue
 
-            echo "### $title" >> CHANGELOG.md
+            echo "#### $title" >> CHANGELOG.md
             while IFS='|' read -r cdate msg author
             do
               clean_msg=$(echo "$msg" | sed -E "s/^$prefix[[:space:]]*//I")
