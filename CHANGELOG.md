@@ -4,15 +4,16 @@ All notable changes to this project will be documented in this file.
 The project is created and maintained by [Richard Koranteng](https://rkkoranteng.com), and adheres to [Calendar Versioning](https://calver.org/).
 
 ## v2025.08.4
-### Added (add)
+#### Added
 - 2025-09-03 : add section logic (Richard Koranteng)
 
-### Changed (ref)
-- 2025-09-03 : refactor changelog to use prefix headings (Richard Koranteng)
+#### Changed
+- 2025-09-03 : changed $title to use H4 formatting (Richard Koranteng)
+- 2025-09-03 : changed the section headings (Richard Koranteng)
 
-### Fixed (fix)
+#### Fixed
 - 2025-09-03 : testing (Richard Koranteng)
 
-### Deleted (del)
+#### Deleted
 - 2025-09-03 : old apporach (Richard Koranteng)
 
