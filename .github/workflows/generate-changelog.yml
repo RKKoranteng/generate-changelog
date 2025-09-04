@@ -16,22 +16,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # need full history & tags
+          fetch-depth: 0  # full history & tags
 
-      - name: Generate CHANGELOG.md (newest tags first, with date & author)
+      - name: Generate CHANGELOG.md (grouped by sections)
         shell: bash
         run: |
           set -euo pipefail
 
-          # Get all tags newest -> oldest
+          # All tags, newest -> oldest
           mapfile -t TAGS < <(git tag --sort=-creatordate)
           if [[ ${#TAGS[@]} -eq 0 ]]; then
             echo "No tags found; nothing to write."
             exit 0
           fi
 
-          # Find repository's first commit to bound oldest tag's range
+          # Root commit for bounding oldest tag range
           ROOT_COMMIT="$(git rev-list --max-parents=0 HEAD | tail -n1)"
+
+          # Section map: Title|regex (for filtering lines where the subject starts with this prefix)
+          # NOTE: case-insensitive matching via grep -Ei
+          SECTIONS=(
+            "Added|\\|(add:|add)\\b"
+            "Refactor|\\|(refactor:|refactor|ref:|ref)\\b"
+            "Fixed|\\|(fix:|fix)\\b"
+            "Deleted|\\|(delete:|delete|del:|del)\\b"
+          )
 
           TMP_FILE="$(mktemp)"
           {
@@ -43,7 +52,7 @@ jobs:
             echo
             # ---------------------------------------
 
-            # For each tag: gather commits between it and the next older tag
+            # Iterate tags newest -> oldest
             for (( i=0; i<${#TAGS[@]}; i++ )); do
               CUR="${TAGS[$i]}"
               NEXT_OLD="${TAGS[$((i+1))]:-}"
@@ -54,20 +63,38 @@ jobs:
                 RANGE="${ROOT_COMMIT}..${CUR}"
               fi
 
-              # Get commits (exclude merges), format: date|subject|author
-              # Exclude the auto-changelog commit exactly:
-              #   docs: regenerate CHANGELOG [skip ci]
-              COMMITS="$(git log --no-merges --date=short --pretty=format:'%ad|%s|%an' "$RANGE" \
-                | grep -Fv 'docs: regenerate CHANGELOG [skip ci]' || true)"
+              # Collect all commits in range (no merges), format date|subject|author
+              ALL_COMMITS="$(git log --no-merges --date=short --pretty=format:'%ad|%s|%an' "$RANGE" || true)"
+              # Exclude the auto-generated changelog commit exactly (subject match)
+              ALL_COMMITS="$(printf "%s\n" "$ALL_COMMITS" | grep -Fv '|docs: regenerate CHANGELOG [skip ci]' || true)"
 
-              [[ -z "$COMMITS" ]] && continue
+              # If no commits after filtering, skip the section entirely
+              [[ -z "$ALL_COMMITS" ]] && continue
 
               echo "## ${CUR}"
-              # Print: - YYYY-MM-DD : subject (author)
-              while IFS='|' read -r cdate csubject cauthor; do
-                echo "- ${cdate} : ${csubject} (${cauthor})"
-              done <<< "$COMMITS"
-              echo
+
+              any_section_emitted=0
+              for entry in "${SECTIONS[@]}"; do
+                IFS="|" read -r TITLE REGEX <<< "$entry"
+
+                # Filter for this section based on the prefix at the start of the subject
+                SECTION_COMMITS="$(printf "%s\n" "$ALL_COMMITS" | grep -Ei "$REGEX" || true)"
+                [[ -z "$SECTION_COMMITS" ]] && continue
+
+                # Emit bullets for the section; requested format:
+                # - YYYY-MM-DD : subject (author)
+                while IFS='|' read -r cdate csubject cauthor; do
+                  # Strip the leading prefix variants from the subject (case-insensitive)
+                  clean_subject="$(printf "%s" "$csubject" \
+                    | sed -E 's/^(add:|add|refactor:|refactor|ref:|ref|fix:|fix|delete:|delete|del:|del)[[:space:]]*//I')"
+                  echo "- ${cdate} : ${clean_subject} (${cauthor})"
+                done <<< "$SECTION_COMMITS"
+
+                any_section_emitted=1
+              done
+
+              # If nothing matched any section (unlikely), don't leave an empty tag section
+              [[ "$any_section_emitted" -eq 1 ]] && echo
             done
           } > "$TMP_FILE"
 
