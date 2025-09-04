@@ -34,7 +34,7 @@ jobs:
 
           echo "## ${last_tag}" >> CHANGELOG.md
 
-          for section in "Added (add)|add:" "Changed (ref)|ref:" "Fixed (fix)|fix:" "Deleted (del)|del:"
+          for section in "Added|add:" "Changed|chg:" "Fixed|fix:" "Deleted|del:"
           do
             IFS="|" read -r title prefix <<< "$section"
             commits=$(git log $range --no-merges --date=short --pretty=format:"%ad|%s|%an" | grep -Ei "\|$prefix" | grep -Fv 'docs: update CHANGELOG [skip ci]' || true)
