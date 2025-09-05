@@ -10,6 +10,7 @@ The project is created and maintained by [Richard Koranteng](https://rkkoranteng
 - 2025-09-03 : add section logic (Richard Koranteng)
 
 #### Changed
+- 2025-09-04 : updated doc to link workflow to yml (Richard Koranteng)
 - 2025-09-03 : changed $title to use H4 formatting (Richard Koranteng)
 - 2025-09-03 : changed the section headings (Richard Koranteng)
 
