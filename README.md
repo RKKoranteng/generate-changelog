@@ -4,7 +4,7 @@
 The changelog is rebuilt every time new commits are pushed to the main branch or a release is created.
 
 ## How It Works
-1. The workflow runs on:
+1. The [workflow](.github/workflows/generate-changelog.yml) runs on:
    - Pushes to the `main` branch
    - Manual dispatch (`workflow_dispatch`)
 2. Git history is scanned starting from the most recent version tag (e.g., `v1.2.3`).
@@ -17,7 +17,7 @@ The changelog is rebuilt every time new commits are pushed to the main branch or
 
 
 ## Getting Started
-- Copy the workflow file into your repository:
+- Copy the [workflow](.github/workflows/generate-changelog.yml) file into your repository:
   ``` bash
   .github/workflows/generate-changelog.yml
   ```
